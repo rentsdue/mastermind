@@ -1,43 +1,60 @@
 import random
 
+# Function to validate if a number is valid for the game
 def is_valid_number(number, allow_repeats):
     num_str = str(number)
     return (
         1000 <= number <= 9999
-        and (allow_repeats or len(set(num_str)) == 4)
-        and not num_str.startswith('0')
+        and (allow_repeats or len(set(num_str)) == 4)  # Allows repeating digits if allow_repeats is True
+        and not num_str.startswith('0')  # Ensures the number doesn't start with 0
     )
 
+# Function to hide the answer with empty lines
+def hide_answer(answer):
+    return f"\n" * 100
+
+# Function to generate a unique answer without repeating digits
 def get_unique_answer(allow_repeats):
     while True:
         answer = random.randrange(1000, 10000)
         if is_valid_number(answer, allow_repeats):
-            return answer
+            if not allow_repeats and len(set(str(answer))) == 4:  # If no repeating digits are allowed
+                return answer
 
+# Function to play the Mastermind game
 def play_mastermind(mode, allow_repeats):
-    if mode == "by myself":
+    attempts = 0  # Initialize attempts
+    answer = 0  # Initialize answer
+
+    if mode == "single player":
+        # Generate a unique answer for the player
         answer = get_unique_answer(allow_repeats)
-        attempts = 0
-        print("Welcome to Mastermind! The objective is to guess a random 4-digit number.")
-    elif mode == "someone else":
+        print("Welcome to Mastermind! The objective is to guess a random 4-digit number set by the computer.")
+    elif mode == "multiplayer":
         while True:
             try:
+                # Prompt the opponent to pick an answer
                 answer = int(input("Opponent, pick a number. Make it challenging! Good luck: "))
                 if is_valid_number(answer, allow_repeats):
-                    break
+                    if not allow_repeats and len(set(str(answer))) == 4:  # If no repeating digits are allowed
+                        break
+                    else:
+                        print("Invalid answer. Ensure it's a 4-digit integer without repeating digits.")
                 else:
                     print("Invalid answer. Ensure it's a 4-digit integer without repeating digits.")
             except ValueError:
                 print("Invalid input. Please enter a valid integer.")
                 continue
-        attempts = 0
-        print("Good luck!")
-
+        print(hide_answer(answer))  # Hide the opponent's answer
+        print("Good luck! The answer is hidden.")
     else:
-        print("Invalid response. Please type 'by myself' or 'someone else'.")
+        # Handle invalid game mode input
+        print("Invalid response. Please type 'single player' or 'multiplayer'.")
         return
 
-    while True:
+    previous_attempts = set()  # Keep track of previous attempts
+
+    while attempts <= 10:  # Limit attempts to 10
         try:
             n = int(input("Guess the number: "))
         except ValueError:
@@ -46,24 +63,33 @@ def play_mastermind(mode, allow_repeats):
 
         if not is_valid_number(n, allow_repeats):
             print("Invalid guess. Ensure it's a 4-digit integer without repeating digits.")
-            if mode == "by myself":  # Don't count attempts in this case
+            if mode == "single player":  # Don't count attempts in this case
                 continue
             else:
-                attempts += 1
-                if attempts > 15:
-                    print("You've reached the maximum number of attempts. The answer was:", answer)
-                    break
                 print("Opponent, please try again.")
                 continue
 
+        if n in previous_attempts:  # Check if the attempt is a repeat
+            print("Invalid guess. You already guessed this number.")
+            continue
+
+        previous_attempts.add(n)  # Add the attempt to the set of previous attempts
         attempts += 1  # Count attempts here
 
         if n == answer:
-            if attempts <= 15:
-                print("You've become a Mastermind!")
-                print("It took you only", attempts, "tries.")
-            else:
-                print("You failed to guess it in 15 tries! I win! The answer is:", answer)
+            print("You've become a Mastermind!")
+            if attempts == 1:
+                print("Impressive! It took you only", attempts, "try. You weren't cheating... were you?")
+            elif 2 < attempts < 4:
+                print("Amazing! You only needed", attempts, "attempts. Was it luck, or was it logic?")
+            elif 5 < attempts < 7:
+                print("Great! You completed this in", attempts, "tries. I'm impressed!")
+            elif 8 < attempts < 10:
+                print("That was a close call! You accomplished this in", attempts, "tries!")
+
+            if mode == "single player":
+                print("The hidden answer was:", answer)  # Reveal the answer when playing "single player"
+
             break
 
         correct = sum(1 for a, b in zip(str(n), str(answer)) if a == b)
@@ -73,11 +99,18 @@ def play_mastermind(mode, allow_repeats):
         print("You guessed", wrong_position, "correct digits that are currently in the wrong position.")
         print("Attempts:", attempts)
 
+    if attempts > 10:
+        print("You've reached the maximum number of attempts (10). The hidden answer is", answer, ". Better luck next time.")
+
+# Main loop for starting the game
 while True:
-    mode = input("Welcome to Mastermind! Play 'by myself' or 'someone else': ").lower()
-    if mode in ["by myself", "someone else"]:
-        allow_repeats = input("Allow repeating digits in the answer? (yes/no): ").lower() == "yes"
-        play_mastermind(mode, allow_repeats)
+    mode = input("Welcome to Mastermind! Play 'single player' or 'multiplayer': ").lower()
+    if mode in ["single player", "multiplayer"]:
+        allow_repeats = input("Allow repeating digits in the answer? (yes/no): ").lower()
+        if allow_repeats not in ["yes", "no"]:
+            print("Invalid input. Please type 'yes' or 'no'.")
+            continue
+        play_mastermind(mode, allow_repeats == "yes")
         break
     else:
-        print("Invalid input. Please type 'by myself' or 'someone else'.")
+        print("Invalid input. Please type 'single player' or 'multiplayer'.")
