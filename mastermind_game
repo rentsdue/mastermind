@@ -1,0 +1,83 @@
+import random
+
+def is_valid_number(number, allow_repeats):
+    num_str = str(number)
+    return (
+        1000 <= number <= 9999
+        and (allow_repeats or len(set(num_str)) == 4)
+        and not num_str.startswith('0')
+    )
+
+def get_unique_answer(allow_repeats):
+    while True:
+        answer = random.randrange(1000, 10000)
+        if is_valid_number(answer, allow_repeats):
+            return answer
+
+def play_mastermind(mode, allow_repeats):
+    if mode == "by myself":
+        answer = get_unique_answer(allow_repeats)
+        attempts = 0
+        print("Welcome to Mastermind! The objective is to guess a random 4-digit number.")
+    elif mode == "someone else":
+        while True:
+            try:
+                answer = int(input("Opponent, pick a number. Make it challenging! Good luck: "))
+                if is_valid_number(answer, allow_repeats):
+                    break
+                else:
+                    print("Invalid answer. Ensure it's a 4-digit integer without repeating digits.")
+            except ValueError:
+                print("Invalid input. Please enter a valid integer.")
+                continue
+        attempts = 0
+        print("Good luck!")
+
+    else:
+        print("Invalid response. Please type 'by myself' or 'someone else'.")
+        return
+
+    while True:
+        try:
+            n = int(input("Guess the number: "))
+        except ValueError:
+            print("Invalid input. Enter a valid integer.")
+            continue
+
+        if not is_valid_number(n, allow_repeats):
+            print("Invalid guess. Ensure it's a 4-digit integer without repeating digits.")
+            if mode == "by myself":  # Don't count attempts in this case
+                continue
+            else:
+                attempts += 1
+                if attempts > 15:
+                    print("You've reached the maximum number of attempts. The answer was:", answer)
+                    break
+                print("Opponent, please try again.")
+                continue
+
+        attempts += 1  # Count attempts here
+
+        if n == answer:
+            if attempts <= 15:
+                print("You've become a Mastermind!")
+                print("It took you only", attempts, "tries.")
+            else:
+                print("You failed to guess it in 15 tries! I win! The answer is:", answer)
+            break
+
+        correct = sum(1 for a, b in zip(str(n), str(answer)) if a == b)
+        wrong_position = max(0, len(set(str(n)) & set(str(answer))) - correct)  # Ensure it's always positive or 0
+
+        print("You guessed", correct, "correct digits in the correct position.")
+        print("You guessed", wrong_position, "correct digits that are currently in the wrong position.")
+        print("Attempts:", attempts)
+
+while True:
+    mode = input("Welcome to Mastermind! Play 'by myself' or 'someone else': ").lower()
+    if mode in ["by myself", "someone else"]:
+        allow_repeats = input("Allow repeating digits in the answer? (yes/no): ").lower() == "yes"
+        play_mastermind(mode, allow_repeats)
+        break
+    else:
+        print("Invalid input. Please type 'by myself' or 'someone else'.")
